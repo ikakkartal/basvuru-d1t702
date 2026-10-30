@@ -208,7 +208,9 @@
 
   <form id="basvuruForm">
     <div class="kart">
-      <div class="kart-baslik">Ad Soyad</div>
+      <div class="kart-baslik">Kimlik Numarası ve Ad Soyad</div>
+      <!-- 2026-10-30: TC alanı (BOLUMLER'de "Kimlik & İletişim") çizilirken buraya, Ad/Soyad'ın üstüne taşınır -->
+      <div id="tcYeri"></div>
       <div class="grid2">
         <div class="satir">
           <label>Ad<span class="zorunlu">*</span></label>
@@ -585,7 +587,9 @@ var OGRENIM_VERISI = {"u":[[1,"ABDULLAH GÜL ÜNİVERSİTESİ"],[2,"ACIBADEM MEH
         })(giris, belgeInput, a.key);
       }
 
-      grid.appendChild(satir);
+      // TC Kimlik No formun en üstünde, Ad/Soyad kutularının üzerinde gösterilir (kullanıcı isteği 2026-10-30)
+      if (a.key === "tcKimlikNo" && document.getElementById("tcYeri")) document.getElementById("tcYeri").appendChild(satir);
+      else grid.appendChild(satir);
     });
 
     kart.appendChild(grid);
