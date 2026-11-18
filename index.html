@@ -241,16 +241,17 @@
       <div class="not-metni">
         Aşağıdaki iki belgeyi e-Devlet'ten alıp PDF olarak yükleyin. "e-Devlet'ten Al" düğmesi ilgili e-Devlet sayfasını
         yeni sekmede açar; e-Devlet şifrenizle giriş yapıp belgeyi indirin, sonra bu sayfaya dönüp indirdiğiniz dosyayı seçin.
+        <b>Yalnız e-Devlet'ten indirilen PDF dosyası kabul edilir; fotoğraf, ekran görüntüsü veya başka dosya yüklenemez.</b>
       </div>
       <div class="satir">
         <label>Adli Sicil Kaydı (Sabıka Kaydı)<span class="zorunlu">*</span></label>
         <a class="edevlet-dugme" href="https://www.turkiye.gov.tr/adli-sicil-kaydi" target="_blank" rel="noopener">e-Devlet'ten Al</a>
-        <input type="file" class="giris edevlet-belge" data-edevlet-key="adliSicil" accept=".pdf,application/pdf,image/*" required />
+        <input type="file" class="giris edevlet-belge" data-edevlet-key="adliSicil" accept=".pdf,application/pdf" required />
       </div>
       <div class="satir">
         <label>Yerleşim Yeri (İkametgâh) ve Diğer Adres Belgesi<span class="zorunlu">*</span></label>
         <a class="edevlet-dugme" href="https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama" target="_blank" rel="noopener">e-Devlet'ten Al</a>
-        <input type="file" class="giris edevlet-belge" data-edevlet-key="yerlesimYeri" accept=".pdf,application/pdf,image/*" required />
+        <input type="file" class="giris edevlet-belge" data-edevlet-key="yerlesimYeri" accept=".pdf,application/pdf" required />
       </div>
     </div>
 
@@ -1358,6 +1359,17 @@ var OGRENIM_VERISI = {"u":[[1,"ABDULLAH GÜL ÜNİVERSİTESİ"],[2,"ACIBADEM MEH
       var dosya = girisi.files[0];
       delete belgeDosyalari[alanAdi];
       if (!dosya) return;
+      var pdfDegilMesaji =
+        "Bu alana yalnız e-Devlet'ten indirdiğiniz PDF dosyası yüklenebilir.\n\n" +
+        "Seçtiğiniz dosya (" + dosya.name + ") PDF değil. Fotoğraf, ekran görüntüsü veya başka dosya kabul edilmez.\n\n" +
+        "\"e-Devlet'ten Al\" düğmesiyle belgeyi açıp PDF olarak indirin, sonra o dosyayı seçin.";
+      // PDF zorunluluğu (2026-11-18): uzantı .pdf olmalı; ayrıca içerik de gerçekten PDF mi (adı değiştirilmiş resim olmasın)
+      // (bazı Android dosya yöneticileri PDF'in türünü boş/"octet-stream" verir — bu yüzden türe değil ada ve içeriğe bakılır)
+      if (!/\.pdf$/i.test(dosya.name) && dosya.type !== "application/pdf") {
+        alert(pdfDegilMesaji);
+        girisi.value = "";
+        return;
+      }
       if (dosya.size > 10 * 1024 * 1024) {
         alert("Belge dosyası 10 MB'tan büyük olamaz. Lütfen e-Devlet'ten indirdiğiniz PDF'i seçin.");
         girisi.value = "";
@@ -1365,10 +1377,18 @@ var OGRENIM_VERISI = {"u":[[1,"ABDULLAH GÜL ÜNİVERSİTESİ"],[2,"ACIBADEM MEH
       }
       var okuyucu = new FileReader();
       okuyucu.onload = function () {
+        var bytes = new Uint8Array(okuyucu.result);
+        // Gerçek PDF dosyaları "%PDF" ile başlar (ilk 1 KB içinde)
+        var bas = String.fromCharCode.apply(null, Array.prototype.slice.call(bytes, 0, 1024));
+        if (bas.indexOf("%PDF") < 0) {
+          alert(pdfDegilMesaji);
+          girisi.value = "";
+          return;
+        }
         belgeDosyalari[alanAdi] = {
-          bytes: new Uint8Array(okuyucu.result),
+          bytes: bytes,
           ad: dosya.name,
-          tip: dosya.type || "application/octet-stream",
+          tip: "application/pdf",
         };
       };
       okuyucu.readAsArrayBuffer(dosya);
